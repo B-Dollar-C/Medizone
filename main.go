@@ -14,16 +14,36 @@ import (
 func main() {
 	route := httprouter.New()
 	uc := controllers.NewUserController(getClient())
-	route.POST("/api/SignUp", uc.SignUp)
-	route.POST("/api/SignIn", uc.SignIn)
-	route.POST("/api/CreateOwner", uc.CreateOwner)
-	route.POST("/api/CreateMedicine", uc.CreateMedicine)
-	route.GET("/api/GetMedicines", uc.GetMedicines)
-	route.POST("/api/AddToCart", uc.AddToCart)
-	route.PUT("/api/RemoveFromCart", uc.RemoveFromCart)
-	route.POST("/api/Checkout", uc.Checkout)
-	route.PUT("/api/PlaceOrder", uc.PlaceOrder)
-	route.GET("/api/GetCarts/", uc.GetCarts)
+
+	corsMiddleware := func(next httprouter.Handle) httprouter.Handle {
+		return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+			w.Header().Set("Access-Control-Allow-Origin", "*")
+			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+			w.Header().Set("Access-Control-Allow-Headers", "Origin, Content-Type, Authorization")
+
+			if r.Method == "OPTIONS" {
+				w.WriteHeader(http.StatusOK)
+				return
+			}
+
+			next(w, r, ps)
+		}
+	}
+
+	route.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
+	route.POST("/api/SignUp", corsMiddleware(uc.SignUp))
+	route.POST("/api/SignIn", corsMiddleware(uc.SignIn))
+	route.POST("/api/CreateOwner", corsMiddleware(uc.CreateOwner))
+	route.POST("/api/CreateMedicine", corsMiddleware(uc.CreateMedicine))
+	route.GET("/api/GetMedicines", corsMiddleware(uc.GetMedicines))
+	route.POST("/api/AddToCart", corsMiddleware(uc.AddToCart))
+	route.PUT("/api/RemoveFromCart", corsMiddleware(uc.RemoveFromCart))
+	route.POST("/api/Checkout", corsMiddleware(uc.Checkout))
+	route.PUT("/api/PlaceOrder", corsMiddleware(uc.PlaceOrder))
+	route.GET("/api/GetCarts/", corsMiddleware(uc.GetCarts))
 	fmt.Println("Starting server at port 8080")
 	http.ListenAndServe(":8080", route)
 
